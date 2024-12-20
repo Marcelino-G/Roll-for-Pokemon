@@ -100,6 +100,7 @@ public class PokedexApplication {
                     if (userPlayGameChoice == 1) {
                         displayBagInventory(balls);
                     } else if (userPlayGameChoice == 2) {
+                        displayPokedex(pokedex);
                         System.out.println("pokedex");
                     } else if (userPlayGameChoice == 3) {
 
@@ -148,37 +149,17 @@ public class PokedexApplication {
                                     System.out.println("awh");
                                     chosenBall.setInventory(chosenBall.getInventory() - 1);
                                 }
+                                System.out.println("""
+                                        Search again?
+                                        1. Yes
+                                        2. No
+                                        """);
+
+                                int userSearchAgainChoice = userInputChoiceSelected();
+                                if(userSearchAgainChoice == 2){
+                                    break;
+                                }
                             }
-
-                            break;
-
-
-//
-//                            if(userRollChoice == 1){
-//                                int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
-//                                System.out.println("Your roll: " + rolledNumber);
-//                                System.out.println("Pokemon's defense stat: " + pokemon.getStatDefense());
-//                                if(rolledNumber > pokemon.getStatDefense()){
-//                                    pokedex.add(pokemon);
-//                                    System.out.println("Congrats! You caught " + pokemon.getName());
-//                                } else {
-//                                    System.out.println("awh");
-//                                }
-//                                break;
-//                            }
-
-
-
-
-//                            if(userInputPokemon.equals("0")){
-//                                int randomNumberId = makeRandomNumberId();
-//                                Pokemon pokemon = pokemonApi.requestPokemonById(randomNumberId);
-//                            } else{
-//
-//                            }
-
-
-
 
 
 
@@ -196,6 +177,29 @@ public class PokedexApplication {
 
                         }
                     } else if (userPlayGameChoice == 4) {
+                        while(true){
+
+                            int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
+                            Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
+                            rollForPokemonPrompt(pokemon);
+
+                            System.out.println("""
+                                        Search again?
+                                        1. Yes
+                                        2. No
+                                        """);
+
+                            int userSearchAgainChoice = userInputChoiceSelected();
+                            if(userSearchAgainChoice == 2){
+                                break;
+                            }
+
+
+                        }
+
+
+
+
                         System.out.println("random");
                     } else if (userPlayGameChoice == 0) {
                         System.out.println("return");
@@ -237,6 +241,63 @@ public class PokedexApplication {
         }
     }
 
+    public void displayPokedex(ArrayList<Pokemon> pokedex){
+        System.out.println("""
+                ----------------------------
+                POKEDEX
+                ----------------------------
+                               \s
+                """);
+        for (Pokemon pokemon : pokedex) {
+            System.out.println("Pokename: " + pokemon.getName() + " || Type: " + pokemon.getType() + " || Stat defense: " + pokemon.getStatDefense());
+        }
+    }
+
+    public void rollForPokemonPrompt(Pokemon pokemon){
+
+        System.out.println("\nPokename: " + pokemon.getName() + " || Type: " + pokemon.getType() + " || Stat defense: " + pokemon.getStatDefense());
+        System.out.println("""
+                                
+                                You must roll higher than the Pokemon's defense stat to catch it.
+                                Would you like to roll for Pokemon?
+                                1. Yes
+                                2. No
+                                """);
+        int userRollChoice = userInputChoiceSelected();
+        if(userRollChoice == 1){
+            System.out.println("Choose a Pokeball to use: \n");
+            displayBagInventory(balls);
 
 
+            Ball chosenBall = balls.get(userInput.nextInt() - 1);
+            userInput.nextLine();
+
+            if(chosenBall.getInventory() == 0){
+                System.out.println("You have 0 " + chosenBall.getName() + "s.");
+                System.out.println("Choose a different ball to use.");
+            }  else {
+                double catchRateMultiplier = chosenBall.getCatchRate();
+
+
+                int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
+                int rolledWithMultiplier = (int)Math.round(rolledNumber * catchRateMultiplier);
+
+
+                System.out.println("Your roll: " + rolledNumber);
+                System.out.println("Total with success rate: " + rolledWithMultiplier);
+                System.out.println("Pokemon's defense stat: " + pokemon.getStatDefense());
+                if(rolledWithMultiplier > pokemon.getStatDefense()){
+                    pokedex.add(pokemon);
+                    chosenBall.setInventory(chosenBall.getInventory() - 1);
+                    System.out.println("Congrats! You caught " + pokemon.getName());
+                } else {
+                    System.out.println("awh");
+                    chosenBall.setInventory(chosenBall.getInventory() - 1);
+                }
+            }
+
+
+
+        }
+    }
 }
