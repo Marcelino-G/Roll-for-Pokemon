@@ -1,4 +1,5 @@
 package com.app.pokedex;
+
 import com.app.pokedex.Api.ItemApi;
 import com.app.pokedex.Api.PokemonApi;
 import com.app.pokedex.Ball.Ball;
@@ -20,9 +21,9 @@ public class PokedexApplication {
     private final ItemApi itemApi = new ItemApi();
     private final PokemonApi pokemonApi = new PokemonApi();
     private ArrayList<Pokemon> pokedex = new ArrayList<>();
-    private final BallBuilder ballBuilder = new BallBuilder();
+    private final BallBuilder ballBuilder = new BallBuilder(itemApi);
     private final RandomNumberMaker randomNumberMaker = new RandomNumberMaker();
-    private ArrayList<Ball> balls = ballBuilder.buildBalls(itemApi);
+    private ArrayList<Ball> balls = ballBuilder.buildBalls();
 
     private final String introMessage = """
             ----------------------------
@@ -40,28 +41,25 @@ public class PokedexApplication {
             You've found a bag full of Poke Balls. You better take it because who knows
             what type of journey lies ahead.
                         
-            You'll either search or randomly search for a Pokemon to capture. Some information
+            You'll either manually search or randomly search for a Pokemon to capture. Some information
             about the Pokemon will be returned, including its base defense stat. This is important
             because you'll have to "roll" for a number higher than this stat to capture it.
-            You will then be given the option to begin your roll or to search or randomly search
-            for a different Pokemon.
+            You will then be given the option to begin your roll or to search for a different Pokemon.
 
-            If you roll lower than the Pokemon's stat, you lose your Poke Ball.
+            If you roll lower than the Pokemon's defense stat, you fail to add it to your Pokedex.
             If you roll higher than the Pokemon's stat, you capture the Pokemon and add it to your Pokedex.
+            Both outcomes result in you losing the Poke Ball you chose to use.
                         
             The type of Poke Ball that you choose to use may also increase your chances of capture by
             multiplying its capture rate by your rolled number.
-                        
-            The bag contains:
-            - Poke Ball (10 quantity) (1x capture rate)
-            - Great Ball (5 quantity) (1.5x capture rate)
-            - Ultra Ball (4 quantity) (2x capture rate)
-            - Master Ball (1 quantity) (guaranteed capture)
+            
+            Check your bag to view your Poke Balls.
             """;
     private final String menuPrompt = """
             ----------------------------
             MAIN MENU
             ----------------------------
+            
             1. Rules
             2. Play game
             3. Save file
@@ -71,6 +69,7 @@ public class PokedexApplication {
             ----------------------------
             PLAY GAME
             ----------------------------
+            
             1. Check bag
             2. Check Pokedex
             3. Search Pokemon
@@ -101,106 +100,42 @@ public class PokedexApplication {
                         displayBagInventory(balls);
                     } else if (userPlayGameChoice == 2) {
                         displayPokedex(pokedex);
-                        System.out.println("pokedex");
                     } else if (userPlayGameChoice == 3) {
-
-
-
-
-
-
-
-                        while(true){
+                        while (true) {
                             System.out.println("Type a Pokemon's name to search for:");
                             String userInputPokemon = userInput.nextLine();
                             Pokemon pokemon = pokemonApi.requestPokemonByName(userInputPokemon);
-                            System.out.println("\nPokename: " + pokemon.getName() + " || Type: " + pokemon.getType() + " || Stat defense: " + pokemon.getStatDefense());
-                            System.out.println("""
-                                
-                                You must roll higher than the Pokemon's defense stat to catch it.
-                                Would you like to roll for Pokemon?
-                                1. Yes
-                                2. No
-                                """);
-                            int userRollChoice = userInputChoiceSelected();
-                            if(userRollChoice == 1){
-                                System.out.println("Choose a Pokeball to use: \n");
-                                displayBagInventory(balls);
-
-
-                                Ball chosenBall = balls.get(userInput.nextInt() - 1);
-                                userInput.nextLine();
-
-                                double catchRateMultiplier = chosenBall.getCatchRate();
-
-
-                                int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
-                                int rolledWithMultiplier = (int)Math.round(rolledNumber * catchRateMultiplier);
-
-
-                                System.out.println("Your roll: " + rolledNumber);
-                                System.out.println("Total with success rate: " + rolledWithMultiplier);
-                                System.out.println("Pokemon's defense stat: " + pokemon.getStatDefense());
-                                if(rolledWithMultiplier > pokemon.getStatDefense()){
-                                    pokedex.add(pokemon);
-                                    chosenBall.setInventory(chosenBall.getInventory() - 1);
-                                    System.out.println("Congrats! You caught " + pokemon.getName());
-                                } else {
-                                    System.out.println("awh");
-                                    chosenBall.setInventory(chosenBall.getInventory() - 1);
-                                }
-                                System.out.println("""
-                                        Search again?
-                                        1. Yes
-                                        2. No
-                                        """);
-
-                                int userSearchAgainChoice = userInputChoiceSelected();
-                                if(userSearchAgainChoice == 2){
-                                    break;
-                                }
+                            int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+//
+//                            System.out.println("""
+//                                    Search again?
+//                                    1. Yes
+//                                    2. No
+//                                    """);
+//
+//                            int userSearchAgainChoice = userInputChoiceSelected();
+                            if (userSearchAgainChoice == 2) {
+                                break;
                             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                         }
                     } else if (userPlayGameChoice == 4) {
-                        while(true){
+                        while (true) {
 
                             int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
                             Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
-                            rollForPokemonPrompt(pokemon);
-
-                            System.out.println("""
-                                        Search again?
-                                        1. Yes
-                                        2. No
-                                        """);
-
-                            int userSearchAgainChoice = userInputChoiceSelected();
-                            if(userSearchAgainChoice == 2){
+                            int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+//
+//                            System.out.println("""
+//                                    Search again?
+//                                    1. Yes
+//                                    2. No
+//                                    """);
+//
+//                            int userSearchAgainChoice = userInputChoiceSelected();
+                            if (userSearchAgainChoice == 2) {
                                 break;
                             }
-
-
                         }
-
-
-
-
-                        System.out.println("random");
                     } else if (userPlayGameChoice == 0) {
                         System.out.println("return");
                         break;
@@ -233,71 +168,97 @@ public class PokedexApplication {
                 ----------------------------
                 BAG
                 ----------------------------
-                               \s
-                id  ||  name    ||  quantity    ||  effect
+                
+                Id  ||  Item        ||  Quantity        ||  Effect
                 """);
         for (Ball ball : balls) {
-            System.out.println(ball.getBagId() + "  ||  " + ball.getName() + "  ||  " + ball.getInventory() + " ||  " + ball.getShort_effect());
+            System.out.println(ball.getBagId() + "  ||  " + ball.getName().replace("-", " ") + "      ||  " + ball.getInventory() + "             ||  " + ball.getShort_effect());
         }
+        System.out.println(" ");
     }
 
-    public void displayPokedex(ArrayList<Pokemon> pokedex){
+    public void displayPokedex(ArrayList<Pokemon> pokedex) {
         System.out.println("""
                 ----------------------------
                 POKEDEX
                 ----------------------------
-                               \s
+                
+                Pokemon     ||      Type    ||      Defense stat
                 """);
         for (Pokemon pokemon : pokedex) {
-            System.out.println("Pokename: " + pokemon.getName() + " || Type: " + pokemon.getType() + " || Stat defense: " + pokemon.getStatDefense());
+            System.out.println(pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + "      ||      " + pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1) + "   ||        " + pokemon.getStatDefense());
         }
+        System.out.println(" ");
     }
 
-    public void rollForPokemonPrompt(Pokemon pokemon){
+    public int rollForPokemonPrompt(Pokemon pokemon) {
 
-        System.out.println("\nPokename: " + pokemon.getName() + " || Type: " + pokemon.getType() + " || Stat defense: " + pokemon.getStatDefense());
+        System.out.println("\nPokemon: " + pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + " || Type: " + pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1) + " || Defense stat: " + pokemon.getStatDefense());
         System.out.println("""
-                                
-                                You must roll higher than the Pokemon's defense stat to catch it.
-                                Would you like to roll for Pokemon?
-                                1. Yes
-                                2. No
-                                """);
+                
+                Would you like to roll for Pokemon?
+                1. Yes
+                2. No
+                """);
         int userRollChoice = userInputChoiceSelected();
-        if(userRollChoice == 1){
-            System.out.println("Choose a Pokeball to use: \n");
-            displayBagInventory(balls);
+        if (userRollChoice == 1) {
+
+            while (true) {
 
 
-            Ball chosenBall = balls.get(userInput.nextInt() - 1);
-            userInput.nextLine();
-
-            if(chosenBall.getInventory() == 0){
-                System.out.println("You have 0 " + chosenBall.getName() + "s.");
-                System.out.println("Choose a different ball to use.");
-            }  else {
-                double catchRateMultiplier = chosenBall.getCatchRate();
+                System.out.println("Choose a Pokeball to use: \n");
+                displayBagInventory(balls);
 
 
-                int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
-                int rolledWithMultiplier = (int)Math.round(rolledNumber * catchRateMultiplier);
+                Ball chosenBall = balls.get(userInput.nextInt() - 1);
+                userInput.nextLine();
 
 
-                System.out.println("Your roll: " + rolledNumber);
-                System.out.println("Total with success rate: " + rolledWithMultiplier);
-                System.out.println("Pokemon's defense stat: " + pokemon.getStatDefense());
-                if(rolledWithMultiplier > pokemon.getStatDefense()){
-                    pokedex.add(pokemon);
-                    chosenBall.setInventory(chosenBall.getInventory() - 1);
-                    System.out.println("Congrats! You caught " + pokemon.getName());
+                if (chosenBall.getInventory() == 0) {
+                    System.out.println("You have 0 " + chosenBall.getName() + "s.");
+                    System.out.println("Choose a different ball to use.");
                 } else {
-                    System.out.println("awh");
-                    chosenBall.setInventory(chosenBall.getInventory() - 1);
+                    double catchRateMultiplier = chosenBall.getCatchRate();
+
+
+                    int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
+                    int rolledWithMultiplier = (int) Math.round(rolledNumber * catchRateMultiplier);
+
+
+//                    System.out.println("Your roll: " + rolledNumber);
+                    System.out.println("Pokemon's defense stat: " + pokemon.getStatDefense());
+                    System.out.println("Your roll: " + rolledWithMultiplier);
+
+                    if (rolledWithMultiplier > pokemon.getStatDefense()) {
+                        pokedex.add(pokemon);
+                        chosenBall.setInventory(chosenBall.getInventory() - 1);
+                        System.out.println("\n \uD83C\uDFC6 Congrats! You caught " + pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + " \uD83C\uDFC6 \n");
+                    } else {
+                        System.out.println("\n \uD83D\uDE2D " + pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + " got away! \uD83D\uDE2D \n");
+                        chosenBall.setInventory(chosenBall.getInventory() - 1);
+                    }
+                    break;
                 }
+
+
             }
 
 
 
         }
+
+        System.out.println("""
+                    Search again?
+                    
+                    1. Yes
+                    2. No
+                    """);
+
+        int userSearchAgainChoice = userInputChoiceSelected();
+
+        return userSearchAgainChoice;
+
     }
+
+
 }

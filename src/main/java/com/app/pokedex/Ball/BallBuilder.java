@@ -10,11 +10,19 @@ import java.util.ArrayList;
 
 public class BallBuilder {
 
+
+
+    private ItemApi itemApi;
     private Ball[] balls = new Ball[]{new PokeBall(), new GreatBall(), new UltraBall(), new MasterBall()};
     private ArrayList<Ball> detailedBalls = new ArrayList<>();
 //    private Ball[] detailedBalls = new Ball[balls.length];
 
-    public ArrayList<Ball> buildBalls(ItemApi itemApi) {
+
+    public BallBuilder(ItemApi itemApi) {
+        this.itemApi = itemApi;
+    }
+
+    public ArrayList<Ball> buildBalls() {
 
         for (int i = 0; i < balls.length; i++) {
             detailedBalls.add(itemApi.requestBall(balls[i]));
