@@ -18,9 +18,9 @@ import java.util.Scanner;
 public class PokedexApplication {
 
     private final Scanner userInput = new Scanner(System.in);
-    private final ItemApi itemApi = new ItemApi();
-    private final PokemonApi pokemonApi = new PokemonApi();
     private ArrayList<Pokemon> pokedex = new ArrayList<>();
+    private final PokemonApi pokemonApi = new PokemonApi();
+    private final ItemApi itemApi = new ItemApi();
     private final BallBuilder ballBuilder = new BallBuilder(itemApi);
     private final RandomNumberMaker randomNumberMaker = new RandomNumberMaker();
     private ArrayList<Ball> balls = ballBuilder.buildBalls();
@@ -105,15 +105,9 @@ public class PokedexApplication {
                             System.out.println("Type a Pokemon's name to search for:");
                             String userInputPokemon = userInput.nextLine();
                             Pokemon pokemon = pokemonApi.requestPokemonByName(userInputPokemon);
+
                             int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
-//
-//                            System.out.println("""
-//                                    Search again?
-//                                    1. Yes
-//                                    2. No
-//                                    """);
-//
-//                            int userSearchAgainChoice = userInputChoiceSelected();
+
                             if (userSearchAgainChoice == 2) {
                                 break;
                             }
@@ -124,20 +118,12 @@ public class PokedexApplication {
                             int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
                             Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
                             int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
-//
-//                            System.out.println("""
-//                                    Search again?
-//                                    1. Yes
-//                                    2. No
-//                                    """);
-//
-//                            int userSearchAgainChoice = userInputChoiceSelected();
+
                             if (userSearchAgainChoice == 2) {
                                 break;
                             }
                         }
                     } else if (userPlayGameChoice == 0) {
-                        System.out.println("return");
                         break;
                     }
                 }
@@ -145,7 +131,6 @@ public class PokedexApplication {
                 System.out.println("save");
             } else if (userMenuChoice == 0) {
                 userInput.close();
-                System.out.println("end");
                 break;
             }
         }
@@ -155,11 +140,11 @@ public class PokedexApplication {
         int menuSelection;
         try {
             menuSelection = userInput.nextInt();
-            userInput.nextLine();
         } catch (InputMismatchException e) {
             System.out.println("Please choose from the selection of numbers");
             menuSelection = -1;
         }
+        userInput.nextLine();
         return menuSelection;
     }
 
@@ -172,7 +157,14 @@ public class PokedexApplication {
                 Id  ||  Item        ||  Quantity        ||  Effect
                 """);
         for (Ball ball : balls) {
-            System.out.println(ball.getBagId() + "  ||  " + ball.getName().replace("-", " ") + "      ||  " + ball.getInventory() + "             ||  " + ball.getShort_effect());
+
+            int ballId = ball.getBagId();
+            String ballName = ball.getName().replace("-", " ");
+            int ballInventory = ball.getInventory();
+            String ballEffect = ball.getShort_effect();
+
+
+            System.out.println(ballId + "  ||  " + ballName + "      ||  " + ballInventory + "             ||  " + ballEffect);
         }
         System.out.println(" ");
     }
@@ -186,14 +178,23 @@ public class PokedexApplication {
                 Pokemon     ||      Type    ||      Defense stat
                 """);
         for (Pokemon pokemon : pokedex) {
-            System.out.println(pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + "      ||      " + pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1) + "   ||        " + pokemon.getStatDefense());
+
+            String pokemonName = pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1);
+            String pokemonType = pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1);
+            int pokemonDefenseStat = pokemon.getStatDefense();
+
+            System.out.println(pokemonName + "      ||      " + pokemonType + "   ||        " + pokemonDefenseStat);
         }
         System.out.println(" ");
     }
 
     public int rollForPokemonPrompt(Pokemon pokemon) {
 
-        System.out.println("\nPokemon: " + pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + " || Type: " + pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1) + " || Defense stat: " + pokemon.getStatDefense());
+        String pokemonName = pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1);
+        String pokemonType = pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1);
+        int pokemonDefenseStat = pokemon.getStatDefense();
+
+        System.out.println("\nPokemon: " + pokemonName + " || Type: " + pokemonType + " || Defense stat: " + pokemonDefenseStat);
         System.out.println("""
                 
                 Would you like to roll for Pokemon?
@@ -213,30 +214,34 @@ public class PokedexApplication {
                 Ball chosenBall = balls.get(userInput.nextInt() - 1);
                 userInput.nextLine();
 
+                String ballName = chosenBall.getName();
+                int ballInventory = chosenBall.getInventory();
+                double ballCatchRate = chosenBall.getCatchRate();
 
-                if (chosenBall.getInventory() == 0) {
-                    System.out.println("You have 0 " + chosenBall.getName() + "s.");
+
+                if (ballInventory == 0) {
+                    System.out.println("You have 0 " + ballName + "s.");
                     System.out.println("Choose a different ball to use.");
                 } else {
-                    double catchRateMultiplier = chosenBall.getCatchRate();
+//                    double catchRateMultiplier = ballCatchRate;
 
 
                     int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
-                    int rolledWithMultiplier = (int) Math.round(rolledNumber * catchRateMultiplier);
+                    int rolledWithMultiplier = (int) Math.round(rolledNumber * ballCatchRate);
 
 
 //                    System.out.println("Your roll: " + rolledNumber);
-                    System.out.println("Pokemon's defense stat: " + pokemon.getStatDefense());
+                    System.out.println("Pokemon's defense stat: " + pokemonDefenseStat);
                     System.out.println("Your roll: " + rolledWithMultiplier);
 
-                    if (rolledWithMultiplier > pokemon.getStatDefense()) {
+                    if (rolledWithMultiplier > pokemonDefenseStat) {
                         pokedex.add(pokemon);
-                        chosenBall.setInventory(chosenBall.getInventory() - 1);
-                        System.out.println("\n \uD83C\uDFC6 Congrats! You caught " + pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + " \uD83C\uDFC6 \n");
+                        System.out.println("\n \uD83C\uDFC6 Congrats! You caught " + pokemonName + " \uD83C\uDFC6 \n");
                     } else {
-                        System.out.println("\n \uD83D\uDE2D " + pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1) + " got away! \uD83D\uDE2D \n");
-                        chosenBall.setInventory(chosenBall.getInventory() - 1);
+                        System.out.println("\n \uD83D\uDE2D " + pokemonName + " got away! \uD83D\uDE2D \n");
+
                     }
+                    chosenBall.setInventory(ballInventory - 1);
                     break;
                 }
 
