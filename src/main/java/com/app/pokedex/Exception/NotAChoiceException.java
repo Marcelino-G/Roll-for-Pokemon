@@ -1,6 +1,6 @@
 package com.app.pokedex.Exception;
 
-public class NotAChoiceException extends Exception{
+public class NotAChoiceException extends RuntimeException{
 
     public NotAChoiceException() {
     }

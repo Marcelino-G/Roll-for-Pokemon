@@ -4,13 +4,14 @@ import com.app.pokedex.Api.ItemApi;
 import com.app.pokedex.Api.PokemonApi;
 import com.app.pokedex.Ball.Ball;
 import com.app.pokedex.Ball.BallBuilder;
+import com.app.pokedex.Exception.NotAChoiceException;
+import com.app.pokedex.Exception.PokemonNotFoundException;
 import com.app.pokedex.Pokemon.Pokemon;
 import com.app.pokedex.RandomNumberMaker.RandomNumberMaker;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.Random;
 import java.util.Scanner;
 
 
@@ -52,14 +53,14 @@ public class PokedexApplication {
                         
             The type of Poke Ball that you choose to use may also increase your chances of capture by
             multiplying its capture rate by your rolled number.
-            
+                        
             Check your bag to view your Poke Balls.
             """;
     private final String menuPrompt = """
             ----------------------------
             MAIN MENU
             ----------------------------
-            
+                        
             1. Rules
             2. Play game
             3. Save file
@@ -69,7 +70,7 @@ public class PokedexApplication {
             ----------------------------
             PLAY GAME
             ----------------------------
-            
+                        
             1. Check bag
             2. Check Pokedex
             3. Search Pokemon
@@ -88,63 +89,101 @@ public class PokedexApplication {
         System.out.println(introMessage);
 
         while (true) {
-            System.out.println(menuPrompt);
-            int userMenuChoice = userInputChoiceSelected();
-            if (userMenuChoice == 1) {
-                System.out.println(rulesMessage);
-            } else if (userMenuChoice == 2) {
-                while (true) {
-                    System.out.println(playGamePrompt);
-                    int userPlayGameChoice = userInputChoiceSelected();
-                    if (userPlayGameChoice == 1) {
-                        displayBagInventory(balls);
-                    } else if (userPlayGameChoice == 2) {
-                        displayPokedex(pokedex);
-                    } else if (userPlayGameChoice == 3) {
-                        while (true) {
-                            System.out.println("Type a Pokemon's name to search for:");
-                            String userInputPokemon = userInput.nextLine();
-                            Pokemon pokemon = pokemonApi.requestPokemonByName(userInputPokemon);
+            try {
+                System.out.println(menuPrompt);
+                int userMenuChoice = userInputChoiceSelected();
+                if (userMenuChoice == 1) {
+                    System.out.println(rulesMessage);
+                } else if (userMenuChoice == 2) {
+                    while (true) {
 
-                            int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+                        try {
+                            System.out.println(playGamePrompt);
+                            int userPlayGameChoice = userInputChoiceSelected();
+                            if (userPlayGameChoice == 1) {
+                                displayBagInventory(balls);
+                            } else if (userPlayGameChoice == 2) {
+                                displayPokedex(pokedex);
+                            } else if (userPlayGameChoice == 3) {
+                                while (true) {
 
-                            if (userSearchAgainChoice == 2) {
+                                    try {
+                                        System.out.println("Type a Pokemon's name to search for:");
+                                        String userInputPokemon = userInput.nextLine();
+
+                                        try {
+                                            Pokemon pokemon = pokemonApi.requestPokemonByName(userInputPokemon);
+                                            int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+
+                                            if (userSearchAgainChoice == 2) {
+                                                break;
+                                            }
+                                        } catch (HttpClientErrorException ex) {
+                                            throw new PokemonNotFoundException("\n Could not find " + userInputPokemon + "\n");
+                                        }
+                                    } catch (PokemonNotFoundException ex) {
+                                        System.out.println(ex.getMessage());
+                                    }
+
+
+                                }
+                            } else if (userPlayGameChoice == 4) {
+                                while (true) {
+
+                                    int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
+                                    Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
+                                    int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+
+                                    if (userSearchAgainChoice == 2) {
+                                        break;
+                                    }
+                                }
+                            } else if (userPlayGameChoice == 0) {
                                 break;
+                            } else if (userPlayGameChoice > 4) {
+                                throw new NotAChoiceException("Please choose a valid number choice");
                             }
-                        }
-                    } else if (userPlayGameChoice == 4) {
-                        while (true) {
 
-                            int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
-                            Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
-                            int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
 
-                            if (userSearchAgainChoice == 2) {
-                                break;
-                            }
+                        } catch (NotAChoiceException ex) {
+                            System.out.println(ex.getMessage());
                         }
-                    } else if (userPlayGameChoice == 0) {
-                        break;
+
+
                     }
+                } else if (userMenuChoice == 3) {
+                    System.out.println("save");
+                } else if (userMenuChoice == 0) {
+                    userInput.close();
+                    break;
+                } else if (userMenuChoice > 3) {
+                    throw new NotAChoiceException("Please choose a valid number choice");
                 }
-            } else if (userMenuChoice == 3) {
-                System.out.println("save");
-            } else if (userMenuChoice == 0) {
-                userInput.close();
-                break;
+            } catch (NotAChoiceException ex) {
+
+                System.out.println(ex.getMessage());
+
+
             }
+
+
         }
     }
 
     public int userInputChoiceSelected() {
-        int menuSelection;
+        int menuSelection = -1;
+        String input = "";
         try {
-            menuSelection = userInput.nextInt();
-        } catch (InputMismatchException e) {
-            System.out.println("Please choose from the selection of numbers");
-            menuSelection = -1;
+//            menuSelection = userInput.nextInt();
+            input = userInput.nextLine();
+            menuSelection = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println(input + " is not a valid number choice");
+//            menuSelection = -1;
         }
-        userInput.nextLine();
+
+
+//        userInput.nextLine();
         return menuSelection;
     }
 
@@ -153,7 +192,7 @@ public class PokedexApplication {
                 ----------------------------
                 BAG
                 ----------------------------
-                
+                                
                 Id  ||  Item        ||  Quantity        ||  Effect
                 """);
         for (Ball ball : balls) {
@@ -174,13 +213,13 @@ public class PokedexApplication {
                 ----------------------------
                 POKEDEX
                 ----------------------------
-                
+                                
                 Pokemon     ||      Type    ||      Defense stat
                 """);
         for (Pokemon pokemon : pokedex) {
 
-            String pokemonName = pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1);
-            String pokemonType = pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1);
+            String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
+            String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
             int pokemonDefenseStat = pokemon.getStatDefense();
 
             System.out.println(pokemonName + "      ||      " + pokemonType + "   ||        " + pokemonDefenseStat);
@@ -190,13 +229,13 @@ public class PokedexApplication {
 
     public int rollForPokemonPrompt(Pokemon pokemon) {
 
-        String pokemonName = pokemon.getName().substring(0,1).toUpperCase() + pokemon.getName().substring(1);
-        String pokemonType = pokemon.getType().substring(0,1).toUpperCase() + pokemon.getType().substring(1);
+        String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
+        String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
         int pokemonDefenseStat = pokemon.getStatDefense();
 
         System.out.println("\nPokemon: " + pokemonName + " || Type: " + pokemonType + " || Defense stat: " + pokemonDefenseStat);
         System.out.println("""
-                
+                                
                 Would you like to roll for Pokemon?
                 1. Yes
                 2. No
@@ -211,8 +250,8 @@ public class PokedexApplication {
                 displayBagInventory(balls);
 
 
-                Ball chosenBall = balls.get(userInput.nextInt() - 1);
-                userInput.nextLine();
+                Ball chosenBall = balls.get(Integer.parseInt(userInput.nextLine()) - 1);
+//                userInput.nextLine();
 
                 String ballName = chosenBall.getName();
                 int ballInventory = chosenBall.getInventory();
@@ -249,15 +288,14 @@ public class PokedexApplication {
             }
 
 
-
         }
 
         System.out.println("""
-                    Search again?
-                    
-                    1. Yes
-                    2. No
-                    """);
+                Search again?
+                                    
+                1. Yes
+                2. No
+                """);
 
         int userSearchAgainChoice = userInputChoiceSelected();
 
