@@ -19,11 +19,18 @@ import java.util.Scanner;
 public class PokedexApplication {
 
     private final Scanner userInput = new Scanner(System.in);
+
+    //    pokedex is an empty ArrayList of Pokemon. Pokemon are added to it with
+//    each successful roll. This helps us track our captured Pokemon.
     private ArrayList<Pokemon> pokedex = new ArrayList<>();
     private final PokemonApi pokemonApi = new PokemonApi();
     private final ItemApi itemApi = new ItemApi();
     private final BallBuilder ballBuilder = new BallBuilder(itemApi);
     private final RandomNumberMaker randomNumberMaker = new RandomNumberMaker();
+
+    // balls is an ArrayList of all the classes that
+    // extend the Ball class. This allows us access to
+    // ball count and special ball effects.
     private ArrayList<Ball> balls = ballBuilder.buildBalls();
 
     private final String introMessage = """
@@ -41,26 +48,26 @@ public class PokedexApplication {
             ----------------------------
             You've found a bag full of Poke Balls. You better take it because who knows
             what type of journey lies ahead.
-                        
+            
             You'll either manually search or randomly search for a Pokemon to capture. Some information
             about the Pokemon will be returned, including its base defense stat. This is important
             because you'll have to "roll" for a number higher than this stat to capture it.
             You will then be given the option to begin your roll or to search for a different Pokemon.
-
+            
             If you roll lower than the Pokemon's defense stat, you fail to add it to your Pokedex.
             If you roll higher than the Pokemon's stat, you capture the Pokemon and add it to your Pokedex.
             Both outcomes result in you losing the Poke Ball you chose to use.
-                        
+            
             The type of Poke Ball that you choose to use may also increase your chances of capture by
             multiplying its capture rate by your rolled number.
-                        
+            
             Check your bag to view your Poke Balls.
             """;
     private final String menuPrompt = """
             ----------------------------
             MAIN MENU
             ----------------------------
-                        
+            
             1. Rules
             2. Play game
             3. Save file
@@ -70,12 +77,18 @@ public class PokedexApplication {
             ----------------------------
             PLAY GAME
             ----------------------------
-                        
+            
             1. Check bag
             2. Check Pokedex
             3. Search Pokemon
             4. Randomly search Pokemon
             0. Return to main menu
+            """;
+    private final String searchAgainPrompt = """
+             Search again?
+            
+                1. Yes
+                2. No
             """;
 
     public static void main(String[] args) {
@@ -88,13 +101,25 @@ public class PokedexApplication {
 
         System.out.println(introMessage);
 
+        // main loop for the main menu prompt
+        // loop ends when you hit '0' which also closes the program.
+        // loop continues whenever a valid input is entered
+        // and may dive into another loop with a different prompt.
         while (true) {
+
+            // a try|catch that catches a NotAChoiceException
+            // which is thrown within the loop when the user
+            // enters an invalid prompt choice.
             try {
                 System.out.println(menuPrompt);
                 int userMenuChoice = userInputChoiceSelected();
                 if (userMenuChoice == 1) {
                     System.out.println(rulesMessage);
                 } else if (userMenuChoice == 2) {
+                    // nested play game loop (within main loop).
+                    // loop ends and returns to the main menu prompt when '0' is entered.
+                    // loop continues whenever a valid input is entered
+                    // and may dive into another loop with a different prompt
                     while (true) {
 
                         try {
@@ -105,17 +130,34 @@ public class PokedexApplication {
                             } else if (userPlayGameChoice == 2) {
                                 displayPokedex(pokedex);
                             } else if (userPlayGameChoice == 3) {
+
+                                // This is a loop for actual gameplay.
+                                // nested roll for pokemon loop (within play game loop).
+                                // user String input is needed here for API related functionality
+                                // and is also why try|catch is used here because adding
+                                // the String to the API may or may not return a match
+                                // and instead an error.
+
                                 while (true) {
 
+                                    // a try|catch that catches a PokemonNotFoundException.
+                                    // which is thrown when a HttpClientErrorException is caught
+                                    // from a nested try|catch. PokemonNotFoundException is a
+                                    // custom exception that is meant to translate to the user's input
+                                    // `userInputPokemon` not existing (not a pokemon) within the API.
                                     try {
                                         System.out.println("Type a Pokemon's name to search for:");
                                         String userInputPokemon = userInput.nextLine();
 
+                                        // a try|catch that catches a HttpClientErrorException
+                                        // and then throws the custom PokemonNotFoundException.
                                         try {
                                             Pokemon pokemon = pokemonApi.requestPokemonByName(userInputPokemon);
-                                            int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+                                            rollForPokemonPrompt(pokemon);
+                                            System.out.println(searchAgainPrompt);
+                                            int userSearchDecision = userInputChoiceSelected();
 
-                                            if (userSearchAgainChoice == 2) {
+                                            if (userSearchDecision == 2) {
                                                 break;
                                             }
                                         } catch (HttpClientErrorException ex) {
@@ -128,19 +170,34 @@ public class PokedexApplication {
 
                                 }
                             } else if (userPlayGameChoice == 4) {
+
+
+                                // This is a loop for actual gameplay.
+                                // nested roll for pokemon loop (within play game loop).
+                                // user String input is not needed here for API related functionality
+                                // because a random number (int) is generated and added to the API
+                                // instead of a string which is lessens the chance of API related errors.
+                                // This was made for those who don't know any pokemon name's or
+                                // simply dont want to enter any.
                                 while (true) {
 
                                     int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
                                     Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
-                                    int userSearchAgainChoice = rollForPokemonPrompt(pokemon);
+                                    rollForPokemonPrompt(pokemon);
+                                    System.out.println(searchAgainPrompt);
+                                    int userSearchDecision = userInputChoiceSelected();
 
-                                    if (userSearchAgainChoice == 2) {
+                                    if (userSearchDecision == 2) {
                                         break;
                                     }
                                 }
                             } else if (userPlayGameChoice == 0) {
+                                // returns to main menu
                                 break;
                             } else if (userPlayGameChoice > 4) {
+                                // an invalid option was entered, throwing an exception
+                                // and rerunning the current loop.
+                                // there are no options greater than '4'
                                 throw new NotAChoiceException("Please choose a valid number choice");
                             }
 
@@ -154,9 +211,13 @@ public class PokedexApplication {
                 } else if (userMenuChoice == 3) {
                     System.out.println("save");
                 } else if (userMenuChoice == 0) {
+                    // ends the program
                     userInput.close();
                     break;
                 } else if (userMenuChoice > 3) {
+                    // an invalid option was entered, throwing an exception
+                    // and rerunning the current loop.
+                    // there are no options greater than '3'
                     throw new NotAChoiceException("Please choose a valid number choice");
                 }
             } catch (NotAChoiceException ex) {
@@ -173,17 +234,16 @@ public class PokedexApplication {
     public int userInputChoiceSelected() {
         int menuSelection = -1;
         String input = "";
+
+        // try|catch to make sure user input a number (int)
+        // not a String
         try {
-//            menuSelection = userInput.nextInt();
             input = userInput.nextLine();
             menuSelection = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             System.out.println(input + " is not a valid number choice");
-//            menuSelection = -1;
         }
 
-
-//        userInput.nextLine();
         return menuSelection;
     }
 
@@ -192,7 +252,7 @@ public class PokedexApplication {
                 ----------------------------
                 BAG
                 ----------------------------
-                                
+                
                 Id  ||  Item        ||  Quantity        ||  Effect
                 """);
         for (Ball ball : balls) {
@@ -213,7 +273,7 @@ public class PokedexApplication {
                 ----------------------------
                 POKEDEX
                 ----------------------------
-                                
+                
                 Pokemon     ||      Type    ||      Defense stat
                 """);
         for (Pokemon pokemon : pokedex) {
@@ -227,7 +287,7 @@ public class PokedexApplication {
         System.out.println(" ");
     }
 
-    public int rollForPokemonPrompt(Pokemon pokemon) {
+    public void rollForPokemonPrompt(Pokemon pokemon) {
 
         String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
         String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
@@ -235,7 +295,7 @@ public class PokedexApplication {
 
         System.out.println("\nPokemon: " + pokemonName + " || Type: " + pokemonType + " || Defense stat: " + pokemonDefenseStat);
         System.out.println("""
-                                
+                
                 Would you like to roll for Pokemon?
                 1. Yes
                 2. No
@@ -253,14 +313,21 @@ public class PokedexApplication {
                 Ball chosenBall = balls.get(Integer.parseInt(userInput.nextLine()) - 1);
 //                userInput.nextLine();
 
-                String ballName = chosenBall.getName();
+                String ballName = chosenBall.getName().replace("-", " ");
                 int ballInventory = chosenBall.getInventory();
                 double ballCatchRate = chosenBall.getCatchRate();
 
 
                 if (ballInventory == 0) {
-                    System.out.println("You have 0 " + ballName + "s.");
-                    System.out.println("Choose a different ball to use.");
+//                    System.out.println("You have 0 " + ballName + "s.");
+//                    System.out.println("Choose a different ball to use.");
+
+                    System.out.printf("""
+                            You have 0 %s's left.
+                            Choose a different ball to use.
+                            
+                            """, ballName);
+
                 } else {
 //                    double catchRateMultiplier = ballCatchRate;
 
@@ -289,18 +356,6 @@ public class PokedexApplication {
 
 
         }
-
-        System.out.println("""
-                Search again?
-                                    
-                1. Yes
-                2. No
-                """);
-
-        int userSearchAgainChoice = userInputChoiceSelected();
-
-        return userSearchAgainChoice;
-
     }
 
 
