@@ -271,8 +271,10 @@ public class PokedexApplication {
 
     // int returned based on the user's input in response to a prompt.
     // handles exceptions for NumberFormatException when a string is entered
-    // instead of a number (int). NotAChoiceException handles exceptions when the number (int)
-    // is out of range from the HIGHEST number choice the prompt gives (highestChoiceNum)
+    // instead of a number (int). NotAChoiceException is thrown when the user enters
+    // a number larger than the LARGEST possible choice the prompt asks for (highestChoiceNum).
+    // This happens within an if statement that also returns the expected int as -1 for further error
+    // handling when needed.
     public int userInputChoiceSelected(int highestChoiceNum) {
         int menuSelection = -1;
         String input = "";

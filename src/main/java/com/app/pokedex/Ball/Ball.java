@@ -5,11 +5,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public class Ball {
 
+    // this id is set when BallBuilder.buildBalls() runs
+    // to represent the item's id in the players bag
     private int bagId;
+    // represents the actual id for this item in the api
     private int apiId;
+    // name of ball
     private String name;
+    // string description of the ball's effect
     private String short_effect;
+    // this is a double that represents the ball's effect on capture rate
     private double catchRate;
+    // the amount of balls we want to provide the player with
     private int inventory;
 
     public double getCatchRate() {

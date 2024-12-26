@@ -4,6 +4,7 @@ import com.app.pokedex.Ball.Ball;
 
 public class GreatBall extends Ball {
 
+
     private final int apiId = 3;
     private int inventory = 5;
     private final double catchRate = 1.5;
