@@ -23,6 +23,7 @@ public class PokeBall extends Ball {
         return inventory;
     }
 
+    // we update everytime we use a ball
     @Override
     public void setInventory(int inventory) {
         this.inventory = inventory;

@@ -323,22 +323,36 @@ public class PokedexApplication {
     // displays your pokedex (pokemon) with a for loop to keep track of
     // all the pokemon you've caught and their information.
     public void displayPokedex(ArrayList<Pokemon> pokedex) {
-        System.out.println("""
+        StringBuilder pokedexStringBuilder = new StringBuilder();
+        pokedexStringBuilder.append("""
                 ----------------------------
                 POKEDEX
                 ----------------------------
                                 
-                Pokemon     ||      Type    ||      Defense stat
+                Pokemon     ||      Type    ||      Defense stat    ||      Picture
+                                
                 """);
+
+//        System.out.println("""
+//                ----------------------------
+//                POKEDEX
+//                ----------------------------
+//
+//                Pokemon     ||      Type    ||      Defense stat
+//                """);
         for (Pokemon pokemon : pokedex) {
 
             String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
             String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
+            String pokemonSprite = pokemon.getMainSprite();
             int pokemonDefenseStat = pokemon.getStatDefense();
 
-            System.out.println(pokemonName + "      ||      " + pokemonType + "   ||        " + pokemonDefenseStat);
+            pokedexStringBuilder.append(("%s      ||      %s   " +
+                    "||        %s          ||        %s \n").formatted(pokemonName, pokemonType, pokemonDefenseStat, pokemonSprite));
+
+//            System.out.println(pokemonName + "      ||      " + pokemonType + "   ||        " + pokemonDefenseStat);
         }
-        System.out.println(" ");
+        System.out.println(pokedexStringBuilder);
     }
 
     // a prompt that displays to you information about the pokemon you've searched for and whether
@@ -347,13 +361,14 @@ public class PokedexApplication {
 
         String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
         String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
+        String pokemonSprite = pokemon.getMainSprite();
         int pokemonDefenseStat = pokemon.getStatDefense();
 
         int userRollChoice;
 
         while (true) {
 
-            System.out.println("\nPokemon: " + pokemonName + " || Type: " + pokemonType + " || Defense stat: " + pokemonDefenseStat);
+            System.out.printf("\nPokemon: %s   ||  Type: %s    ||  Defense stat: %s    ||  Picture: %s \n", pokemonName, pokemonType, pokemonDefenseStat, pokemonSprite);
             System.out.println("""
                                     
                     Would you like to roll for Pokemon?

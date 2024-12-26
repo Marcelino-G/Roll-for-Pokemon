@@ -7,7 +7,6 @@ import org.springframework.web.client.RestTemplate;
 
 public class ItemApi {
 
-
     private final String itemApiPath = "https://pokeapi.co/api/v2/item/";
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -15,7 +14,6 @@ public class ItemApi {
     // these balls are all subclasses that extend the Ball class
     // so that specific (sub)ball class is returned
     public Ball requestBall(Ball ball) {
-
 
         Ball ballResponse = restTemplate.getForObject(itemApiPath + ball.getApiId() + "/", ball.getClass());
         return ballResponse;

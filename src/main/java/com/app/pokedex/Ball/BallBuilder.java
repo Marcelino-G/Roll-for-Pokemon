@@ -10,8 +10,6 @@ import java.util.ArrayList;
 
 public class BallBuilder {
 
-
-
     private final ItemApi itemApi;
 
     // an array of all the subclasses that extend the Ball class
@@ -24,7 +22,7 @@ public class BallBuilder {
 
     // builds an arraylist with detailed information for each ball subclass
     // that extends Ball class by requesting information with the ItemApi class.
-    // a loop is used to run through the balls array since it hold one instance of each subclass ball.
+    // a loop is used to run through the balls array since it holds one instance of each subclass ball.
     public ArrayList<Ball> buildBalls() {
 
         for (int i = 0; i < balls.length; i++) {

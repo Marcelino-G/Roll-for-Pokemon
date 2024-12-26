@@ -13,19 +13,16 @@ public class PokemonApi {
     // requests a specific pokemon by plugging in a string (pokemon name)
     public Pokemon requestPokemonByName(String pokemonName) {
 
-
         Pokemon pokemonResponse = restTemplate.getForObject(pokemonApiPath + pokemonName, Pokemon.class);
 
         return pokemonResponse;
     }
 
     // requests a specific pokemon by plugging in an int (pokemon api id)
-    public Pokemon requestPokemonById(int pokemonId){
+    public Pokemon requestPokemonById(int pokemonId) {
         Pokemon pokemonResponse = restTemplate.getForObject(pokemonApiPath + pokemonId, Pokemon.class);
 
         return pokemonResponse;
     }
-
-
 
 }

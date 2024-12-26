@@ -5,48 +5,37 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
 
+// information on the pokemon the player is trying to capture
+
 public class Pokemon {
 
     private String name;
     private String type;
+
+    // represents the pokemon's defense stat level
     private int statDefense;
+
+    // the picture used to represent the pokemon
     private String mainSprite;
+
+    // hashmap of pictures (sprites) returned from api
     private HashMap<String, Object> sprites;
 
+    // dives into the 'types' array to return the
+    // first (0) type name in the array and assign it here
     @JsonProperty("types")
-    private void typesDive(JsonNode[] types){
+    private void typesDive(JsonNode[] types) {
         this.type = types[0].get("type").get("name").asText();
     }
 
+    // dives into the 'stats' array to get the 'base_stat' (int)
+    // that represents 'defense' and assign it here
     @JsonProperty("stats")
-    private void statsDive(JsonNode[] stats){
+    private void statsDive(JsonNode[] stats) {
         this.statDefense = stats[2].get("base_stat").asInt();
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public int getStatDefense() {
-        return statDefense;
-    }
-
-    public void setStatDefense(int statDefense) {
-        this.statDefense = statDefense;
-    }
-
+    // assigns and gets the picture (sprite) we want to use from the sprites hashmap
     public String getMainSprite() {
 
         if (sprites != null && sprites.containsKey("front_default")) {
@@ -55,15 +44,19 @@ public class Pokemon {
         return mainSprite;
     }
 
-    public void setMainSprite(String mainSprite) {
-        this.mainSprite = mainSprite;
+    public String getName() {
+        return name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public int getStatDefense() {
+        return statDefense;
     }
 
     public HashMap<String, Object> getSprites() {
         return sprites;
-    }
-
-    public void setSprites(HashMap<String, Object> sprites) {
-        this.sprites = sprites;
     }
 }

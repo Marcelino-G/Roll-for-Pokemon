@@ -1,5 +1,8 @@
 package com.app.pokedex.Exception;
 
+
+// when the player tries to use a pokeball that is out of stock
+
 public class ZeroBallsLeftException extends RuntimeException {
 
     public ZeroBallsLeftException() {
