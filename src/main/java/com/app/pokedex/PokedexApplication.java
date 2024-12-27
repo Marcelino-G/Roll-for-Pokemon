@@ -9,6 +9,10 @@ import com.app.pokedex.Exception.PokemonNotFoundException;
 import com.app.pokedex.Exception.ZeroBallsLeftException;
 import com.app.pokedex.Pokemon.Pokemon;
 import com.app.pokedex.RandomNumberMaker.RandomNumberMaker;
+import com.app.pokedex.SQL.PokemonService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -17,7 +21,10 @@ import java.util.Scanner;
 
 
 @SpringBootApplication
-public class PokedexApplication {
+public class PokedexApplication implements CommandLineRunner {
+
+    @Autowired
+    private PokemonService pokemonService;
 
     private final Scanner userInput = new Scanner(System.in);
 
@@ -84,12 +91,24 @@ public class PokedexApplication {
             """;
 
     public static void main(String[] args) {
-//		SpringApplication.run(PokedexApplication.class, args);
-        PokedexApplication app = new PokedexApplication();
-        app.run();
+		SpringApplication.run(PokedexApplication.class, args);
+//        PokedexApplication app = new PokedexApplication();
+//
+//        app.run();
     }
 
-    public void run() {
+    @Override
+    public void run(String... args){
+
+        pokemonService.createTable();
+        pokemonService.exportTableToFile();
+        runApp();
+
+    }
+
+    public void runApp() {
+
+//        pokemonService.createTable();
 
         System.out.println(introMessage);
 
