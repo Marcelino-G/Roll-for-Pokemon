@@ -7,15 +7,17 @@ import com.app.pokedex.Ball.BallBuilder;
 import com.app.pokedex.Exception.NotAChoiceException;
 import com.app.pokedex.Exception.PokemonNotFoundException;
 import com.app.pokedex.Exception.ZeroBallsLeftException;
+import com.app.pokedex.Export.Excel.PokemonServiceExcel;
 import com.app.pokedex.Pokemon.Pokemon;
 import com.app.pokedex.RandomNumberMaker.RandomNumberMaker;
-import com.app.pokedex.SQL.PokemonService;
+import com.app.pokedex.Export.Sql.PokemonServiceSql;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -24,7 +26,7 @@ import java.util.Scanner;
 public class PokedexApplication implements CommandLineRunner {
 
     @Autowired
-    private PokemonService pokemonService;
+    private PokemonServiceSql pokemonService;
 
     private final Scanner userInput = new Scanner(System.in);
 
@@ -91,24 +93,15 @@ public class PokedexApplication implements CommandLineRunner {
             """;
 
     public static void main(String[] args) {
-		SpringApplication.run(PokedexApplication.class, args);
-//        PokedexApplication app = new PokedexApplication();
-//
-//        app.run();
+        SpringApplication.run(PokedexApplication.class, args);
     }
 
     @Override
-    public void run(String... args){
-
-        pokemonService.createTable();
-        pokemonService.exportTableToFile();
+    public void run(String... args) {
         runApp();
-
     }
 
     public void runApp() {
-
-//        pokemonService.createTable();
 
         System.out.println(introMessage);
 
@@ -277,13 +270,129 @@ public class PokedexApplication implements CommandLineRunner {
 
                 }
             } else if (userMenuChoice == 3) {
-                System.out.println("save");
+
+                if (pokedex.isEmpty()) {
+                    System.out.println("Catch some Pokemon first!");
+                } else {
+
+
+                    System.out.println("""
+                        What type of file would you like to save as?
+                        1. Sql
+                        2. Excel
+                        0. Cancel
+                                                
+                        """);
+
+                    int saveTypeDecision = userInputChoiceSelected(3);
+
+                    if (saveTypeDecision == 1) {
+
+                        File databaseFile = new File("mydatabase.db");
+
+
+                        System.out.println("""
+                            Any existing databases (not files) will be overwritten.
+                            Would you like to continue?
+                            1. Yes
+                            2. No
+
+                            """);
+                        int userSaveChoice = userInputChoiceSelected(2);
+
+                        if (userSaveChoice == 1) {
+                            if (databaseFile.exists()) {
+                                pokemonService.dropTable();
+                            }
+
+                            pokemonService.createTable();
+
+                            for (Pokemon pokemon : pokedex) {
+                                pokemonService.addPokemon(pokemon);
+                            }
+
+                            String fileName = nameYourFilePrompt(".sql");
+//                        while(true){
+//
+//                            System.out.println("\n\nPlease name your file:");
+//                            fileName = userInput.nextLine().replace(" ", "_");
+//
+//                            File sqlFile = new File(fileName + ".sql");
+//                            if(sqlFile.exists()){
+//                                System.out.printf("""
+//
+//                                %s already exists.
+//                                Would you like to overwrite it?
+//                                1. Yes
+//                                2. No
+//                                """, sqlFile);
+//
+//                                int userOverwriteFileChoice = userInputChoiceSelected(2);
+//
+//                                if(userOverwriteFileChoice == 1){
+//                                    break;
+//                                } else if (userOverwriteFileChoice == 2) {
+//                                    continue;
+//                                }
+//                            } else if(!sqlFile.exists()){
+//                                break;
+//                            }
+//                        }
+                            pokemonService.exportTableToSqlFile(fileName);
+                        }
+                    } else if (saveTypeDecision == 2) {
+
+
+                        PokemonServiceExcel pokemonServiceExcel = new PokemonServiceExcel();
+
+
+                        String fileName = nameYourFilePrompt(".xlsx");
+
+//                    while(true){
+//
+//                        System.out.println("\n\nPlease name your file:");
+//                        fileName = userInput.nextLine().replace(" ", "_");
+//
+//                        File excelFile = new File(fileName + ".xlsx");
+//                        if(excelFile.exists()){
+//                            System.out.printf("""
+//
+//                                %s already exists.
+//                                Would you like to overwrite it?
+//                                1. Yes
+//                                2. No
+//                                """, excelFile);
+//
+//                            int userOverwriteFileChoice = userInputChoiceSelected(2);
+//
+//                            if(userOverwriteFileChoice == 1){
+//                                break;
+//                            } else if (userOverwriteFileChoice == 2) {
+//                                continue;
+//                            }
+//                        } else if(!excelFile.exists()){
+//                            break;
+//                        }
+//                    }
+
+                        pokemonServiceExcel.exportDataToExcelFile(fileName, pokedex);
+//                    pokemonService.exportTableToWordFile(fileName, pokedex);
+
+                    }
+
+
+//                pokemonService.exportTableToWordFile("hey", pokedex);
+
+                }
+
+
+
+
             } else if (userMenuChoice == 0) {
                 // ends the program
                 userInput.close();
                 break;
             }
-
 
         }
     }
@@ -352,13 +461,6 @@ public class PokedexApplication implements CommandLineRunner {
                                 
                 """);
 
-//        System.out.println("""
-//                ----------------------------
-//                POKEDEX
-//                ----------------------------
-//
-//                Pokemon     ||      Type    ||      Defense stat
-//                """);
         for (Pokemon pokemon : pokedex) {
 
             String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
@@ -505,5 +607,42 @@ public class PokedexApplication implements CommandLineRunner {
             }
         }
     }
+
+    public String nameYourFilePrompt(String fileExtension) {
+
+        String fileName = "";
+
+        while (true) {
+
+            System.out.println("\n\nPlease name your file:");
+            fileName = userInput.nextLine().replace(" ", "_");
+
+            File excelFile = new File(fileName + fileExtension);
+            if (excelFile.exists()) {
+                System.out.printf("""
+
+                        %s already exists.
+                        Would you like to overwrite it?
+                        1. Yes
+                        2. No
+                        """, excelFile);
+
+                int userOverwriteFileChoice = userInputChoiceSelected(2);
+
+                if (userOverwriteFileChoice == 1) {
+                    break;
+                } else if (userOverwriteFileChoice == 2) {
+                    continue;
+                }
+            } else if (!excelFile.exists()) {
+                break;
+            }
+        }
+
+        return fileName;
+
+
+    }
+
 
 }
