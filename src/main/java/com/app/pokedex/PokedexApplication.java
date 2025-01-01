@@ -6,7 +6,7 @@ import com.app.pokedex.Ball.Ball;
 import com.app.pokedex.Ball.BallBuilder;
 import com.app.pokedex.Exception.NotAChoiceException;
 import com.app.pokedex.Exception.PokemonNotFoundException;
-import com.app.pokedex.Exception.ZeroBallsLeftException;
+
 import com.app.pokedex.Export.Excel.PokemonServiceExcel;
 import com.app.pokedex.Pokemon.Pokemon;
 import com.app.pokedex.RandomNumberMaker.RandomNumberMaker;
@@ -21,24 +21,29 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-
 @SpringBootApplication
 public class PokedexApplication implements CommandLineRunner {
 
+    // related to creating a sql database
     @Autowired
     private PokemonServiceSql pokemonService;
 
-    private final Scanner userInput = new Scanner(System.in);
-
     // pokemon are added to this list with each successful roll.
     private ArrayList<Pokemon> pokedex = new ArrayList<>();
+
+    // increments everytime a pokemon is captured and sets the pokemons id.
+    // seen when exporting data.
+    int pokemonId = 0;
+
     private final PokemonApi pokemonApi = new PokemonApi();
     private final ItemApi itemApi = new ItemApi();
     private final BallBuilder ballBuilder = new BallBuilder(itemApi);
-    private final RandomNumberMaker randomNumberMaker = new RandomNumberMaker();
 
     // all the types of balls that extend the Ball class.
     private ArrayList<Ball> balls = ballBuilder.buildBalls();
+
+    private final Scanner userInput = new Scanner(System.in);
+    private final RandomNumberMaker randomNumberMaker = new RandomNumberMaker();
 
     private final String introMessage = """
             ----------------------------
@@ -64,11 +69,10 @@ public class PokedexApplication implements CommandLineRunner {
             If you roll lower than the Pokemon's defense stat, you fail to add it to your Pokedex.
             If you roll higher than the Pokemon's stat, you capture the Pokemon and add it to your Pokedex.
             Both outcomes result in you losing the Poke Ball you chose to use.
+            The minimum possible number roll you can get is 5 while the maximum is 100 with a 
+            regular Poke Ball. Use special Poke Balls to boost your roll and chances of a capture.
                         
-            The type of Poke Ball that you choose to use may also increase your chances of capture by
-            multiplying its capture rate by your rolled number.
-                        
-            Check your bag to view your Poke Balls.
+            Check your bag to view your Poke Balls in the "Play game" menu.
             """;
     private final String menuPrompt = """
             ----------------------------
@@ -98,10 +102,11 @@ public class PokedexApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        runApp();
+        app();
+        System.exit(0);
     }
 
-    public void runApp() {
+    public void app() {
 
         System.out.println(introMessage);
 
@@ -111,8 +116,10 @@ public class PokedexApplication implements CommandLineRunner {
 
             System.out.println(menuPrompt);
             int userMenuChoice = userInputChoiceSelected(3);
+
             if (userMenuChoice == 1) {
                 System.out.println(rulesMessage);
+
             } else if (userMenuChoice == 2) {
 
                 // nested play game loop (within main loop) that
@@ -120,32 +127,44 @@ public class PokedexApplication implements CommandLineRunner {
                 // may dive into another loop with a different prompt
                 while (true) {
 
-
                     System.out.println(playGamePrompt);
                     int userPlayGameChoice = userInputChoiceSelected(4);
+
                     if (userPlayGameChoice == 1) {
                         displayBagInventory(balls);
+
                     } else if (userPlayGameChoice == 2) {
                         displayPokedex(pokedex);
+
                     } else if (userPlayGameChoice == 3) {
 
                         // beginning of actual gameplay.
                         // searching for pokemon loop (within play game loop).
                         // user String input is needed here for API related functionality.
                         while (true) {
+
                             Pokemon pokemon;
 
                             // a try|catch that catches a PokemonNotFoundException.
                             // which is thrown when a HttpClientErrorException is caught
                             // from a nested try|catch.
                             try {
+
                                 System.out.println("Type a Pokemon's name to search for:");
-                                String userInputPokemon = userInput.nextLine();
+                                String userInputPokemon = userInput.nextLine().toLowerCase().trim().replace(" ", "-");
 
                                 // userInputPokemon cannot be an empty string
                                 if (userInputPokemon.isEmpty()) {
+
                                     System.out.println("Input cannot be blank. Please enter a valid Pokemon name. \n");
                                     continue;  // Skip to the next iteration of the loop to prompt again
+
+                                } else if (userInputPokemon.matches("\\d+")) {
+
+                                    // a number is valid for the api but we want names (String) only. id (number) = pokemon
+                                    System.out.println("Input cannot be a number. Please enter a valid Pokemon name. \n");
+                                    continue;  // Skip to the next iteration of the loop to prompt again
+
                                 }
 
                                 // a try|catch that catches a HttpClientErrorException
@@ -155,6 +174,7 @@ public class PokedexApplication implements CommandLineRunner {
 
                                 } catch (HttpClientErrorException ex) {
                                     throw new PokemonNotFoundException("\n Could not find " + userInputPokemon + "\n");
+
                                 }
 
                                 // runs through the rollForPokemonPrompt, and returns an int
@@ -165,43 +185,74 @@ public class PokedexApplication implements CommandLineRunner {
                                 // '1' means yes, and you proceed to choose the ball you want to use
                                 if (userRollChoice == 1) {
 
-                                    Ball userBallChoice = null;
+                                    Ball chosenBall = null;
 
-                                    // choosing a poke ball loop (within searching for pokemon loop).
                                     while (true) {
 
                                         // a try|catch catches a NotAChoiceException when
-                                        // an invalid input is entered and ZeroBallsLeftException
-                                        // when the ball inventory is '0', meaning no balls left to use.
+                                        // an invalid input is entered.
                                         try {
-                                            userBallChoice = choosePokeballPrompt();
-                                        } catch (NotAChoiceException | ZeroBallsLeftException ex) {
+                                            chosenBall = choosePokeballPrompt();
+
+                                        } catch (NotAChoiceException ex) {
                                             System.out.println(ex.getMessage());
+
                                         }
 
-                                        if (userBallChoice != null) {
+                                        if (chosenBall == null) {
+
+                                            // a "0" user response to choosePokeballPrompt()
+                                            // will return a null 'chosenBall'
                                             break;
+
+                                        } else if (chosenBall != null) {
+
+                                            // acceptable chosen ball, but we want to rerun the loop
+                                            // and choose a ball we actually have inventory of
+                                            if (chosenBall.getInventory() == 0) {
+
+                                                String ballName = chosenBall.getName().replace("-", " ");
+                                                System.out.println(("""
+                                                         You have 0 %s's left.
+                                                         Choose a different Poke Ball to use.
+
+                                                        """.formatted(ballName)));
+
+                                                continue;
+
+                                            } else {
+                                                break;
+
+                                            }
                                         }
                                     }
 
+                                    if (chosenBall == null) {
+                                        // userBallChoice = null means that "0" was entered in
+                                        // the choosePokeballPrompt() which means to exit the loop within the function
+                                        // and back here, keeping the chosenBall null and back to play game menu with this break
+                                        break;
 
-                                    capturePokemon(pokemon, userBallChoice);
+                                    }
+
+                                    capturePokemon(pokemon, chosenBall);
 
                                 }
 
                             } catch (PokemonNotFoundException ex) {
                                 System.out.println(ex.getMessage());
+
                             }
 
                             // returns an int that shows your interest in
                             // doing another search. 1 = another search
                             // 2 = breaks the search for pokemon loop
                             int userSearchDecision = searchAgainPrompt();
-                            if (userSearchDecision == 1) {
-                            } else if (userSearchDecision == 2) {
-                                break;
-                            }
 
+                            if (userSearchDecision == 2) {
+                                break;
+
+                            }
 
                         }
                     } else if (userPlayGameChoice == 4) {
@@ -214,7 +265,8 @@ public class PokedexApplication implements CommandLineRunner {
                         // simply dont want to enter any.
                         while (true) {
 
-
+                            // a random number is generated and inserted into the .requestPokemonById()
+                            // because a name can also be search by id
                             int randomPokemonId = randomNumberMaker.makeRandomNumberPokemonId();
                             Pokemon pokemon = pokemonApi.requestPokemonById(randomPokemonId);
 
@@ -226,27 +278,59 @@ public class PokedexApplication implements CommandLineRunner {
                             // '1' means yes, and you proceed to choose the ball you want to use
                             if (userRollChoice == 1) {
 
-                                Ball userBallChoice = null;
+                                Ball chosenBall = null;
 
-                                // choosing a poke ball loop (within searching for pokemon loop).
                                 while (true) {
 
                                     // a try|catch catches a NotAChoiceException when
-                                    // an invalid input is entered and ZeroBallsLeftException
-                                    // when the ball inventory is '0', meaning no balls left to use.
+                                    // an invalid input is entered.
                                     try {
+                                        chosenBall = choosePokeballPrompt();
 
-                                        userBallChoice = choosePokeballPrompt();
-
-                                    } catch (NotAChoiceException | ZeroBallsLeftException ex) {
+                                    } catch (NotAChoiceException ex) {
                                         System.out.println(ex.getMessage());
+
                                     }
 
-                                    if (userBallChoice != null) {
+                                    if (chosenBall == null) {
+
+                                        // a "0" user response to choosePokeballPrompt()
+                                        // will return a null 'chosenBall'
                                         break;
+
+                                    } else if (chosenBall != null) {
+
+                                        // acceptable chosen ball but we want to rerun the loop
+                                        // and choose a ball we actually have inventory of
+                                        if (chosenBall.getInventory() == 0) {
+
+                                            String ballName = chosenBall.getName().replace("-", " ");
+                                            System.out.println(("""
+                                                     You have 0 %s's left.
+                                                     Choose a different Poke Ball to use.
+
+                                                    """.formatted(ballName)));
+
+                                            continue;
+
+                                        } else {
+
+                                            break;
+
+                                        }
                                     }
+
                                 }
-                                capturePokemon(pokemon, userBallChoice);
+
+                                if (chosenBall == null) {
+                                    // userBallChoice = null means that "0" was entered in
+                                    // the choosePokeballPrompt() which means to exit the loop within the function
+                                    // and back here, keeping the chosenBall null and back to play game menu with this break
+                                    break;
+
+                                }
+
+                                capturePokemon(pokemon, chosenBall);
 
                             }
 
@@ -254,147 +338,129 @@ public class PokedexApplication implements CommandLineRunner {
                             // doing another search. 1 = another search
                             // 2 = breaks the search for pokemon loop
                             int userSearchDecision = searchAgainPrompt();
-                            if (userSearchDecision == 1) {
 
-                            } else if (userSearchDecision == 2) {
+                            if (userSearchDecision == 2) {
                                 break;
-                            }
 
+                            }
 
                         }
                     } else if (userPlayGameChoice == 0) {
                         // returns to main menu
                         break;
-                    }
 
+                    }
 
                 }
             } else if (userMenuChoice == 3) {
 
+                // makes sure you even have pokemon to save
                 if (pokedex.isEmpty()) {
                     System.out.println("Catch some Pokemon first!");
+
                 } else {
 
-
-                    System.out.println("""
-                        What type of file would you like to save as?
-                        1. Sql
-                        2. Excel
-                        0. Cancel
-                                                
-                        """);
-
-                    int saveTypeDecision = userInputChoiceSelected(3);
-
-                    if (saveTypeDecision == 1) {
-
-                        File databaseFile = new File("mydatabase.db");
-
+                    while (true) {
 
                         System.out.println("""
-                            Any existing databases (not files) will be overwritten.
-                            Would you like to continue?
-                            1. Yes
-                            2. No
+                                What type of file would you like to save as?
+                                1. Sql
+                                2. Excel
+                                0. Cancel
+                                                        
+                                """);
 
-                            """);
-                        int userSaveChoice = userInputChoiceSelected(2);
+                        int saveTypeDecision = userInputChoiceSelected(2);
 
-                        if (userSaveChoice == 1) {
-                            if (databaseFile.exists()) {
-                                pokemonService.dropTable();
+                        if (saveTypeDecision == 1) {
+
+                            File databaseFile = new File("mydatabase.db");
+
+                            while (true) {
+
+                                // we will drop the only table within the database
+                                // and create a new table with fresh new data each session
+                                // so we can make a clean sql file to export
+                                System.out.println("""
+                                        Any existing databases will be overwritten.
+                                        Would you like to continue?
+                                        1. Yes
+                                        2. No
+
+                                        """);
+
+                                int userSaveChoice = userInputChoiceSelected(2);
+
+                                if (userSaveChoice == 1) {
+
+                                    // if it exists, we drop the only table inside of it
+                                    // so we can have a clean exported (sql, excel) save
+                                    // with each new app run, getting rid of any lingering data from other sessions
+                                    if (databaseFile.exists()) {
+                                        pokemonService.dropTable();
+                                    }
+
+                                    pokemonService.createTable();
+
+                                    for (Pokemon pokemon : pokedex) {
+                                        pokemonService.addPokemon(pokemon);
+                                    }
+
+                                    String fileName = nameYourFilePrompt(".sql");
+
+                                    if (fileName.isEmpty()) {
+                                        // "0" was entered in the nameyourfileprompt() to exit the loop
+                                        break;
+                                    }
+
+                                    pokemonService.exportTableToSqlFile(fileName);
+
+                                    break;
+
+                                } else if (userSaveChoice == 2) {
+
+                                    // returns us back "what type of file" prompt
+                                    break;
+
+                                }
+
                             }
 
-                            pokemonService.createTable();
+                        } else if (saveTypeDecision == 2) {
 
-                            for (Pokemon pokemon : pokedex) {
-                                pokemonService.addPokemon(pokemon);
+                            PokemonServiceExcel pokemonServiceExcel = new PokemonServiceExcel();
+
+                            String fileName = nameYourFilePrompt(".xlsx");
+
+                            if (fileName.isEmpty()) {
+                                // "0" was entered in the nameyourfileprompt() to exit the loop
+                                break;
                             }
 
-                            String fileName = nameYourFilePrompt(".sql");
-//                        while(true){
-//
-//                            System.out.println("\n\nPlease name your file:");
-//                            fileName = userInput.nextLine().replace(" ", "_");
-//
-//                            File sqlFile = new File(fileName + ".sql");
-//                            if(sqlFile.exists()){
-//                                System.out.printf("""
-//
-//                                %s already exists.
-//                                Would you like to overwrite it?
-//                                1. Yes
-//                                2. No
-//                                """, sqlFile);
-//
-//                                int userOverwriteFileChoice = userInputChoiceSelected(2);
-//
-//                                if(userOverwriteFileChoice == 1){
-//                                    break;
-//                                } else if (userOverwriteFileChoice == 2) {
-//                                    continue;
-//                                }
-//                            } else if(!sqlFile.exists()){
-//                                break;
-//                            }
-//                        }
-                            pokemonService.exportTableToSqlFile(fileName);
+                            pokemonServiceExcel.exportDataToExcelFile(fileName, pokedex);
+
+                            break;
+
+                        } else if (saveTypeDecision == 0) {
+                            // returns us back to main menu
+                            break;
+
                         }
-                    } else if (saveTypeDecision == 2) {
-
-
-                        PokemonServiceExcel pokemonServiceExcel = new PokemonServiceExcel();
-
-
-                        String fileName = nameYourFilePrompt(".xlsx");
-
-//                    while(true){
-//
-//                        System.out.println("\n\nPlease name your file:");
-//                        fileName = userInput.nextLine().replace(" ", "_");
-//
-//                        File excelFile = new File(fileName + ".xlsx");
-//                        if(excelFile.exists()){
-//                            System.out.printf("""
-//
-//                                %s already exists.
-//                                Would you like to overwrite it?
-//                                1. Yes
-//                                2. No
-//                                """, excelFile);
-//
-//                            int userOverwriteFileChoice = userInputChoiceSelected(2);
-//
-//                            if(userOverwriteFileChoice == 1){
-//                                break;
-//                            } else if (userOverwriteFileChoice == 2) {
-//                                continue;
-//                            }
-//                        } else if(!excelFile.exists()){
-//                            break;
-//                        }
-//                    }
-
-                        pokemonServiceExcel.exportDataToExcelFile(fileName, pokedex);
-//                    pokemonService.exportTableToWordFile(fileName, pokedex);
 
                     }
 
-
-//                pokemonService.exportTableToWordFile("hey", pokedex);
-
                 }
 
-
-
-
             } else if (userMenuChoice == 0) {
-                // ends the program
+
+                // ends the app() function
                 userInput.close();
                 break;
+
             }
 
         }
+
     }
 
     // int returned based on the user's input in response to a prompt.
@@ -404,37 +470,51 @@ public class PokedexApplication implements CommandLineRunner {
     // This happens within an if statement that also returns the expected int as -1 for further error
     // handling when needed.
     public int userInputChoiceSelected(int highestChoiceNum) {
+
         int menuSelection = -1;
         String input = "";
 
         // try|catch to make sure user inputs a number (int)
         // not a String and a valid choice.
         try {
+
             input = userInput.nextLine();
             menuSelection = Integer.parseInt(input);
+
             if (menuSelection > highestChoiceNum) {
+
                 menuSelection = -1;
                 throw new NotAChoiceException("Please choose a valid number choice \n");
+
             }
         } catch (NumberFormatException ex) {
             System.out.println(input + " is not a valid number choice \n");
+
         } catch (NotAChoiceException ex) {
             System.out.println(ex.getMessage());
+
         }
 
         return menuSelection;
+
     }
 
     // displays your bag (balls) with a for loop to keep track of inventory,
     // effects, and options to choose from.
     public void displayBagInventory(ArrayList<Ball> balls) {
-        System.out.println("""
+
+        StringBuilder bagInventoryStringBuilder = new StringBuilder();
+
+        bagInventoryStringBuilder.append("""
                 ----------------------------
                 BAG
                 ----------------------------
-                                
-                Id  ||  Item        ||  Quantity        ||  Effect
                 """);
+
+        bagInventoryStringBuilder.append(String.format(
+                "%-3s|| %-15s || %-9s || %-100s\n\n",
+                "Id", "Item", "Quantity", "Effect"));
+
         for (Ball ball : balls) {
 
             int ballId = ball.getBagId();
@@ -442,38 +522,49 @@ public class PokedexApplication implements CommandLineRunner {
             int ballInventory = ball.getInventory();
             String ballEffect = ball.getShort_effect();
 
+            bagInventoryStringBuilder.append(String.format(
+                    "%-3s|| %-15s || %-9s || %-100s\n",
+                    ballId, ballName, ballInventory, ballEffect
+            ));
 
-            System.out.println(ballId + "  ||  " + ballName + "      ||  " + ballInventory + "             ||  " + ballEffect);
         }
-        System.out.println(" ");
+
+        System.out.println(bagInventoryStringBuilder);
+
     }
 
     // displays your pokedex (pokemon) with a for loop to keep track of
     // all the pokemon you've caught and their information.
     public void displayPokedex(ArrayList<Pokemon> pokedex) {
+
         StringBuilder pokedexStringBuilder = new StringBuilder();
+
         pokedexStringBuilder.append("""
                 ----------------------------
                 POKEDEX
                 ----------------------------
-                                
-                Pokemon     ||      Type    ||      Defense stat    ||      Picture
-                                
                 """);
+
+        pokedexStringBuilder.append(String.format(
+                "%-4s || %-25s || %-15s || %-15s || %-100s\n\n",
+                "Id", "Pokemon", "Type", "Defense stat", "URL Picture"));
 
         for (Pokemon pokemon : pokedex) {
 
+            int pokemonId = pokemon.getId();
             String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
             String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
             String pokemonSprite = pokemon.getMainSprite();
             int pokemonDefenseStat = pokemon.getStatDefense();
 
-            pokedexStringBuilder.append(("%s      ||      %s   " +
-                    "||        %s          ||        %s \n").formatted(pokemonName, pokemonType, pokemonDefenseStat, pokemonSprite));
+            pokedexStringBuilder.append(String.format(
+                    "%-4s || %-25s || %-15s || %-15s || %-100s\n",
+                    pokemonId, pokemonName, pokemonType, pokemonDefenseStat, pokemonSprite));
 
-//            System.out.println(pokemonName + "      ||      " + pokemonType + "   ||        " + pokemonDefenseStat);
         }
+
         System.out.println(pokedexStringBuilder);
+
     }
 
     // a prompt that displays to you information about the pokemon you've searched for and whether
@@ -496,15 +587,18 @@ public class PokedexApplication implements CommandLineRunner {
                     1. Yes
                     2. No
                     """);
+
             userRollChoice = userInputChoiceSelected(2);
 
             if (userRollChoice == 1 || userRollChoice == 2) {
                 break;
+
             }
 
         }
 
         return userRollChoice;
+
     }
 
     // a prompt that displays your bag (balls) to you so that you can decide which
@@ -516,12 +610,19 @@ public class PokedexApplication implements CommandLineRunner {
         int userBallChoice;
 
         while (true) {
-            System.out.println("Choose a Pokeball to use: \n");
+
+            System.out.println("Choose a Poke Ball to use: \n");
             displayBagInventory(balls);
+            System.out.println("0. Exit");
 
             // ball.size() is used to represent the highestChoiceNum argument in
             // userInputChoiceSelected()... because the highest number option equals it's size.
             userBallChoice = userInputChoiceSelected(balls.size());
+
+            if (userBallChoice == 0) {
+                break;
+
+            }
 
             // if a user enters a number above balls.size() (highestChoiceNum)
             // it throws and displays its exception message but keeps running in this case.
@@ -530,32 +631,13 @@ public class PokedexApplication implements CommandLineRunner {
             // to get an index that doesn't exist within the 'balls' arraylist
             if (userBallChoice != -1) {
 
-                try {
-                    chosenBall = balls.get(userBallChoice - 1);
-                } catch (IndexOutOfBoundsException ex) {
-                    throw new NotAChoiceException("Please choose a valid number choice \n");
-                }
+                chosenBall = balls.get(userBallChoice - 1);
 
-                String ballName = chosenBall.getName().replace("-", " ");
-                int ballInventory = chosenBall.getInventory();
-                double ballCatchRate = chosenBall.getCatchRate();
+                break;
 
-                // lets the user know that there are no more balls left
-                // to use and reruns the loop.
-                if (ballInventory == 0) {
-                    throw new ZeroBallsLeftException("""
-                             You have 0 %s's left.
-                             Choose a different ball to use.
-
-                            """.formatted(ballName));
-
-                } else if (userBallChoice == -1) {
-
-                } else {
-                    break;
-                }
             }
         }
+
         return chosenBall;
 
     }
@@ -574,19 +656,22 @@ public class PokedexApplication implements CommandLineRunner {
         int rolledNumber = randomNumberMaker.makeRandomNumberRoll();
         int rolledWithMultiplier = (int) Math.round(rolledNumber * ballCatchRate);
 
-
         System.out.println("Pokemon's defense stat: " + pokemonDefenseStat);
         System.out.println("Your roll: " + rolledWithMultiplier);
 
         if (rolledWithMultiplier > pokemonDefenseStat) {
+
+            pokemonId++;
+            pokemon.setId(pokemonId);
             pokedex.add(pokemon);
             System.out.println("\n \uD83C\uDFC6 Congrats! You caught " + pokemonName + " \uD83C\uDFC6 \n");
+
         } else {
             System.out.println("\n \uD83D\uDE2D " + pokemonName + " got away! \uD83D\uDE2D \n");
 
         }
-        chosenBall.setInventory(ballInventory - 1);
 
+        chosenBall.setInventory(ballInventory - 1);
 
     }
 
@@ -595,19 +680,26 @@ public class PokedexApplication implements CommandLineRunner {
     public int searchAgainPrompt() {
 
         while (true) {
+
             System.out.println("""
                      Search again?
                                 
                         1. Yes
                         2. No
                     """);
+
             int userSearchDecision = userInputChoiceSelected(2);
+
             if (userSearchDecision == 1 || userSearchDecision == 2) {
                 return userSearchDecision;
+
             }
         }
     }
 
+    // user input filename is what is returned and the fileextension parameter
+    // is inserted to the end of it. the paramter is dependent on the users
+    // save type preference and then the "if" statement it falls under.
     public String nameYourFilePrompt(String fileExtension) {
 
         String fileName = "";
@@ -617,32 +709,42 @@ public class PokedexApplication implements CommandLineRunner {
             System.out.println("\n\nPlease name your file:");
             fileName = userInput.nextLine().replace(" ", "_");
 
-            File excelFile = new File(fileName + fileExtension);
-            if (excelFile.exists()) {
+            File fileToSave = new File(fileName + fileExtension);
+
+            // we want to warn the user that the file (name) already exists
+            // and that if we proceed, we overwrite it
+            if (fileToSave.exists()) {
+
                 System.out.printf("""
 
                         %s already exists.
                         Would you like to overwrite it?
                         1. Yes
                         2. No
-                        """, excelFile);
+                        0. Exit
+                        """, fileToSave);
 
                 int userOverwriteFileChoice = userInputChoiceSelected(2);
 
                 if (userOverwriteFileChoice == 1) {
                     break;
+
                 } else if (userOverwriteFileChoice == 2) {
                     continue;
+                } else if (userOverwriteFileChoice == 0) {
+                    // an empty filename will break the next loop to exit to previous menu
+                    fileName = "";
+                    break;
                 }
-            } else if (!excelFile.exists()) {
+
+            } else if (!fileToSave.exists()) {
                 break;
             }
+
         }
 
         return fileName;
 
-
     }
-
 
 }

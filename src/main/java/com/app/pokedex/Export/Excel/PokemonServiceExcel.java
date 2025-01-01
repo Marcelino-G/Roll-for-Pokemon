@@ -13,29 +13,34 @@ import java.util.ArrayList;
 
 public class PokemonServiceExcel {
 
+
+    // takes in the userinput to name the file and the pokedex arraylist built upon
+    // in game to make an Excel file of the pokemon captured.
     public void exportDataToExcelFile(String fileName, ArrayList<Pokemon> pokedex) {
 
         String excelFilePath = fileName + ".xlsx";
-        int startPokemonId = 1;
         int rowNum = 2;
 
-        try(Workbook workbook = new XSSFWorkbook()){
+        try (Workbook workbook = new XSSFWorkbook()) {
 
             Sheet sheet = workbook.createSheet("Pokedex");
 
             Row headerRow = sheet.createRow(0);
             String[] headers = {"ID", "Name", "Type", "Defense", "Sprite"};
 
-            for(int i =0; i < headers.length; i++){
+            // creates the first row to name the column categories
+            for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
             }
 
-            for(Pokemon pokemon : pokedex){
+            // each new row represents a pokemon and each data falls under
+            // its respective column category
+            for (Pokemon pokemon : pokedex) {
 
                 Row row = sheet.createRow(rowNum);
 
-                int pokemonId = startPokemonId;
+                int pokemonId = pokemon.getId();
                 String pokemonName = pokemon.getName();
                 String pokemonType = pokemon.getType();
                 int statDefense = pokemon.getStatDefense();
@@ -47,22 +52,19 @@ public class PokemonServiceExcel {
                 row.createCell(3).setCellValue(statDefense);
                 row.createCell(4).setCellValue(sprite);
 
-
-                startPokemonId++;
                 rowNum++;
 
             }
 
-            try(FileOutputStream out = new FileOutputStream(excelFilePath)){
+            try (FileOutputStream out = new FileOutputStream(excelFilePath)) {
                 workbook.write(out);
-                System.out.println("word created");
                 System.out.printf("\n%s created in the root folder of this project\n\n", excelFilePath);
-            } catch(IOException ex){
-                System.out.println(ex.getMessage());
+            } catch (IOException ex) {
+                System.out.println("An error occurred during I/O operation: " + ex.getMessage());
             }
 
-        } catch(IOException ex){
-            System.out.println(ex.getMessage());
+        } catch (IOException ex) {
+            System.out.println("An error occurred during I/O operation: " + ex.getMessage());
         }
     }
 }

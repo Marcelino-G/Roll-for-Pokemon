@@ -7,8 +7,11 @@ import java.util.ArrayList;
 public interface PokemonDao {
 
     void createTable();
+
     void dropTable();
+
     void addPokemon(Pokemon pokemon);
+
     void exportTableToSqlFile(String fileName);
 
 }

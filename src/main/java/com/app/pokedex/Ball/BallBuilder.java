@@ -8,6 +8,8 @@ import com.app.pokedex.Ball.Model.UltraBall;
 
 import java.util.ArrayList;
 
+// responsible for bringing all the subclasses of Ball together
+
 public class BallBuilder {
 
     private final ItemApi itemApi;

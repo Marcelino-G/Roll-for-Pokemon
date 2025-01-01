@@ -9,6 +9,8 @@ import java.util.HashMap;
 
 public class Pokemon {
 
+    // id is set during capturePokemon()
+    private int id;
     private String name;
     private String type;
 
@@ -58,5 +60,13 @@ public class Pokemon {
 
     public HashMap<String, Object> getSprites() {
         return sprites;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

@@ -13,26 +13,19 @@ public class PokemonServiceSql {
 
     public void createTable() {
         pokemonDao.createTable();
-//        System.out.println("Pokedex table created");
     }
 
     public void dropTable() {
         pokemonDao.dropTable();
-//        System.out.println("Pokedex table dropped");
     }
 
     public void addPokemon(Pokemon pokemon) {
         pokemonDao.addPokemon(pokemon);
-//        System.out.printf("\n%s added to pokedex table", pokemon.getName());
     }
 
-    public void exportTableToSqlFile(String fileName){
+    public void exportTableToSqlFile(String fileName) {
         pokemonDao.exportTableToSqlFile(fileName);
         System.out.printf("\n%s.sql created in the root folder of this project\n\n", fileName);
     }
-
-//    public void exportTableToWordFile(String fileName, ArrayList<Pokemon> pokedex){
-//        pokemonDao.exportTableToWordFile(fileName, pokedex);
-//    }
 
 }

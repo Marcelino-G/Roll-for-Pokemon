@@ -1,33 +1,22 @@
 package com.app.pokedex.Export.Sql.DAO;
 
 import com.app.pokedex.Pokemon.Pokemon;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.ResultSet;
-import java.util.ArrayList;
+
+// handles sql related operations
 
 @Repository
 public class JdbcPokemonDao implements PokemonDao {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    private int pokemonId = 0;
-
-    public void setPokemonId(int pokemonId) {
-        this.pokemonId = pokemonId;
-    }
 
     private final String sqlCreateTable = """
             CREATE TABLE IF NOT EXISTS pokedex(
@@ -38,15 +27,15 @@ public class JdbcPokemonDao implements PokemonDao {
             sprite varchar(2083),
             CONSTRAINT PK_pokemon_id PRIMARY KEY (pokemon_id)
             );
-            
+                        
             """;
 
-    private String sqlDropTable = """
-                DROP TABLE IF EXISTS pokedex;
-                
-                """;
+    private final String sqlDropTable = """
+            DROP TABLE IF EXISTS pokedex;
+                            
+            """;
 
-    private String sqlSelectAll = "SELECT * FROM pokedex";
+    private final String sqlSelectAll = "SELECT * FROM pokedex";
 
     @Override
     public void createTable() {
@@ -55,27 +44,32 @@ public class JdbcPokemonDao implements PokemonDao {
 
     @Override
     public void dropTable() {
-        this.pokemonId = 0;
         jdbcTemplate.update(sqlDropTable);
     }
 
+    // takes in a pokemon and inserts it's "get" values into the pokedex table with INSERT statements
     @Override
     public void addPokemon(Pokemon pokemon) {
 
+        int pokemonId = pokemon.getId();
         String pokemon_name = pokemon.getName();
         String pokemon_type = pokemon.getType();
         int stat_defense = pokemon.getStatDefense();
         String sprite = pokemon.getMainSprite();
 
-        this.pokemonId = this.pokemonId + 1;
-
         String sqlInsertPokemon = """
                 INSERT INTO pokedex (pokemon_id, pokemon_name, pokemon_type, stat_defense, sprite)
                 VALUES (?, ?, ?, ?, ?);
                 """;
-        jdbcTemplate.update(sqlInsertPokemon, this.pokemonId, pokemon_name, pokemon_type, stat_defense, sprite);
+        jdbcTemplate.update(sqlInsertPokemon, pokemonId, pokemon_name, pokemon_type, stat_defense, sprite);
     }
 
+    // prints out the sql operations that DROP and CREATE the pokedex table
+    // and then prints out the 1+ INSERT statements that add pokemon to the pokedex table.
+    // SQL SCRIPT FOR A SQL FILE ^^^
+    //
+    // a SELECT * is used to get all the pokemon from the pokedex to loop through.
+    // each iteration creates an INSERT statement.
     @Override
     public void exportTableToSqlFile(String fileName) {
 
@@ -83,7 +77,9 @@ public class JdbcPokemonDao implements PokemonDao {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sqlFilePath))) {
 
+            // part of sql script
             writer.write(sqlDropTable);
+            // part of sql script
             writer.write(sqlCreateTable);
 
 
@@ -98,6 +94,7 @@ public class JdbcPokemonDao implements PokemonDao {
                     String sprite = rs.getString("sprite");
 
                     try {
+                        // part of sql script
                         writer.write("""
                                 INSERT INTO pokedex (pokemon_id, pokemon_name, pokemon_type, stat_defense, sprite)
                                 VALUES (%d, '%s', '%s', %d, '%s'); \n
@@ -109,118 +106,9 @@ public class JdbcPokemonDao implements PokemonDao {
                 return null;
             });
         } catch (IOException ex) {
-            System.out.println(ex.getMessage());
+            System.out.println("An error occurred during I/O operation: " + ex.getMessage());
+        } catch (RuntimeException ex) {
+            System.out.println("A runtime error occurred: " + ex.getMessage());
         }
     }
-
-//    @Override
-//    public void exportTableToWordFile(String fileName, ArrayList<Pokemon> pokedex) {
-//
-//        String excelFilePath = fileName + ".xlsx";
-//        int startPokemonId = 1;
-//        int rowNum = 2;
-//
-//        try(Workbook workbook = new XSSFWorkbook()){
-//
-//            Sheet sheet = workbook.createSheet("Pokedex");
-//
-//            Row headerRow = sheet.createRow(0);
-//            String[] headers = {"ID", "Name", "Type", "Defense", "Sprite"};
-//
-//            for(int i =0; i < headers.length; i++){
-//
-//                Cell cell = headerRow.createCell(i);
-//                cell.setCellValue(headers[i]);
-//
-//
-//            }
-//
-//
-//
-//            for(Pokemon pokemon : pokedex){
-//
-//
-//
-//                Row row = sheet.createRow(rowNum);
-//
-//                int pokemonId = startPokemonId;
-//                String pokemonName = pokemon.getName();
-//                String pokemonType = pokemon.getType();
-//                int statDefense = pokemon.getStatDefense();
-//                String sprite = pokemon.getMainSprite();
-//
-//                row.createCell(0).setCellValue(pokemonId);
-//                row.createCell(1).setCellValue(pokemonName);
-//                row.createCell(2).setCellValue(pokemonType);
-//                row.createCell(3).setCellValue(statDefense);
-//                row.createCell(4).setCellValue(sprite);
-//
-//
-//                startPokemonId++;
-//                rowNum++;
-//
-//
-//
-////                run.setText("%d\t%s\t%s\t%d\t%s".formatted(pokemonId,pokemonName,pokemonType,statDefense,sprite));
-//
-//
-//            }
-//
-//
-////            XWPFParagraph title = document.createParagraph();
-////            XWPFRun titleRun = title.createRun();
-////            titleRun.setText("pokedex table export");
-////            titleRun.setBold(true);
-////            titleRun.setFontSize(16);
-////
-////            XWPFParagraph header = document.createParagraph();
-////            XWPFRun headerRun = header.createRun();
-////            headerRun.setBold(true);
-////            headerRun.setText("ID\tName\tType\tDefense\tSprite");
-//
-//
-//
-//
-//
-////            jdbcTemplate.query(sqlSelectAll, (ResultSet rs) -> {
-////
-////                while(rs.next()){
-////
-////                    XWPFParagraph paragraph = document.createParagraph();
-////                    XWPFRun run = paragraph.createRun();
-////
-////
-////                    int pokemonId = rs.getInt("pokemon_id");
-////                    String pokemonName = rs.getString("pokemon_name");
-////                    String pokemonType = rs.getString("pokemon_type");
-////                    int statDefense = rs.getInt("stat_defense");
-////                    String sprite = rs.getString("sprite");
-////
-////                    run.setText("%d\t%s\t%s\t%d\t%s".formatted(pokemonId,pokemonName,pokemonType,statDefense,sprite));
-////
-////                }
-////
-////                return null;
-////
-////            });
-//
-//            try(FileOutputStream out = new FileOutputStream(excelFilePath)){
-//                workbook.write(out);
-//                System.out.println("word created");
-//            } catch(IOException ex){
-//                System.out.println(ex.getMessage());
-//            }
-//
-//
-//
-//
-//        } catch(IOException ex){
-//            System.out.println(ex.getMessage());
-//        }
-//
-//
-//
-//    }
-
-
 }
