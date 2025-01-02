@@ -51,7 +51,7 @@ public class JdbcPokemonDao implements PokemonDao {
     @Override
     public void addPokemon(Pokemon pokemon) {
 
-        int pokemonId = pokemon.getId();
+        int pokemonId = pokemon.getIdApp();
         String pokemon_name = pokemon.getName();
         String pokemon_type = pokemon.getType();
         int stat_defense = pokemon.getStatDefense();

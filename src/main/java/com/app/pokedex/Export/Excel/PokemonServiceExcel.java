@@ -40,7 +40,7 @@ public class PokemonServiceExcel {
 
                 Row row = sheet.createRow(rowNum);
 
-                int pokemonId = pokemon.getId();
+                int pokemonId = pokemon.getIdApp();
                 String pokemonName = pokemon.getName();
                 String pokemonType = pokemon.getType();
                 int statDefense = pokemon.getStatDefense();

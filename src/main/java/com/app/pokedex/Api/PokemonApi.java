@@ -20,6 +20,7 @@ public class PokemonApi {
 
     // requests a specific pokemon by plugging in an int (pokemon api id)
     public Pokemon requestPokemonById(int pokemonId) {
+
         Pokemon pokemonResponse = restTemplate.getForObject(pokemonApiPath + pokemonId, Pokemon.class);
 
         return pokemonResponse;

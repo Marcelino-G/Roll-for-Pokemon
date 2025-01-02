@@ -9,8 +9,13 @@ import java.util.HashMap;
 
 public class Pokemon {
 
-    // id is set during capturePokemon()
+    // actual pokemon id from the api and the pokemon world. for testing purposes.
     private int id;
+
+    // id related to this app. set in the main application for displaying
+    // and exporting data.
+    private int idApp;
+
     private String name;
     private String type;
 
@@ -62,11 +67,16 @@ public class Pokemon {
         return sprites;
     }
 
+    public int getIdApp() {
+        return idApp;
+    }
+
+    public void setIdApp(int idApp) {
+        this.idApp = idApp;
+    }
+
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
 }

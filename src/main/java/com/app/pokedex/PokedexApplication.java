@@ -551,7 +551,7 @@ public class PokedexApplication implements CommandLineRunner {
 
         for (Pokemon pokemon : pokedex) {
 
-            int pokemonId = pokemon.getId();
+            int pokemonId = pokemon.getIdApp();
             String pokemonName = pokemon.getName().substring(0, 1).toUpperCase() + pokemon.getName().substring(1);
             String pokemonType = pokemon.getType().substring(0, 1).toUpperCase() + pokemon.getType().substring(1);
             String pokemonSprite = pokemon.getMainSprite();
@@ -662,7 +662,7 @@ public class PokedexApplication implements CommandLineRunner {
         if (rolledWithMultiplier > pokemonDefenseStat) {
 
             pokemonId++;
-            pokemon.setId(pokemonId);
+            pokemon.setIdApp(pokemonId);
             pokedex.add(pokemon);
             System.out.println("\n \uD83C\uDFC6 Congrats! You caught " + pokemonName + " \uD83C\uDFC6 \n");
 
