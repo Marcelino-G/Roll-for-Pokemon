@@ -406,7 +406,7 @@ public class PokedexApplication implements CommandLineRunner {
                                         pokemonService.addPokemon(pokemon);
                                     }
 
-                                    String fileName = nameYourFilePrompt(".sql");
+                                    String fileName = nameYourFilePrompt(".sql", false);
 
                                     if (fileName.isEmpty()) {
                                         // "0" was entered in the nameyourfileprompt() to exit the loop
@@ -430,7 +430,7 @@ public class PokedexApplication implements CommandLineRunner {
 
                             PokemonServiceExcel pokemonServiceExcel = new PokemonServiceExcel();
 
-                            String fileName = nameYourFilePrompt(".xlsx");
+                            String fileName = nameYourFilePrompt(".xlsx", false);
 
                             if (fileName.isEmpty()) {
                                 // "0" was entered in the nameyourfileprompt() to exit the loop
@@ -700,7 +700,9 @@ public class PokedexApplication implements CommandLineRunner {
     // user input filename is what is returned and the fileextension parameter
     // is inserted to the end of it. the paramter is dependent on the users
     // save type preference and then the "if" statement it falls under.
-    public String nameYourFilePrompt(String fileExtension) {
+    // ISTESTING IS FOR POKEDEXAPPLICATIONTESTS PURPOSES. THESE SHOULD ALL
+    // BE SET TO FALSE HERE WITHIN THE ACTUAL APPLICATION
+    public String nameYourFilePrompt(String fileExtension, boolean isTesting) {
 
         String fileName = "";
 
@@ -713,7 +715,9 @@ public class PokedexApplication implements CommandLineRunner {
 
             // we want to warn the user that the file (name) already exists
             // and that if we proceed, we overwrite it
-            if (fileToSave.exists()) {
+            // TEST CANT CREATE FILES SINCE THIS IS JUST ABOUT NAMING THE FILE.
+            // SO WE FORCE THE TEST INTO THIS STATEMENT WITH THE ISTESTING BOOLEAN
+            if (fileToSave.exists() || isTesting) {
 
                 System.out.printf("""
 

@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class Pokemon {
 
-    // actual pokemon id from the api and the pokemon world. for testing purposes.
+    // actual pokemon id from the api and the pokemon world. for PokedexApplicationTests purposes.
     private int id;
 
     // id related to this app. set in the main application for displaying
