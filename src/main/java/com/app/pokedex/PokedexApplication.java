@@ -47,7 +47,7 @@ public class PokedexApplication implements CommandLineRunner {
 
     private final String introMessage = """
             ----------------------------
-            POKEDEX
+            ROLL FOR POKEMON
             ----------------------------
             It's 2025. What else can go wrong? BOOM! You've been struck by lightning while walking your cat.
             When you rise, you notice the world around you is infested with monsters, known as Pokemon.
