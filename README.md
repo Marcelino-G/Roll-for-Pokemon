@@ -1,8 +1,7 @@
 # Roll for Pokemon
 
 ## What
-Roll for Pokémon is an application that gives you a glimpse into the Pokémon world! You're able to search for Pokémon, have a chance to catch and collect them, and even export your Pokedex data (captured Pokémon) as an SQL or Excel file. 
-You need absolutely zero knowledge of Pokémon, just remember to read the rules and you'll be fine. 
+Roll for Pokémon is a Java-based CLI game that gives you a glimpse into the Pokémon world! You can search for Pokémon, try your luck at catching and collecting them, and even export your Pokédex data (your captured Pokémon) as an SQL or Excel file. You need absolutely zero knowledge of Pokémon — just read the rules and you’ll be fine.
 
 ## Why
 To put together a project that exemplifies Java fundamentals like polymorphism, inheritance, and encapsulation. This project is also meant to showcase other practices related to API interactions with RestTemplate, 
